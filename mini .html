@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3D Solar System with Speed Control</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: black; font-family: Arial; }
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 10px 15px;
+      border-radius: 10px;
+    }
+    .slider {
+      width: 140px;
+      margin-bottom: 8px;
+    }
+    label {
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="controls">
+  <h3>Speed Control</h3>
+  <div id="sliders"></div>
+</div>
+<!-- Three.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<script>
+  const planetsData = [
+    { name: 'Mercury', color: 0xaaaaaa, distance: 10, speed: 0.04 },
+    { name: 'Venus',   color: 0xffcc99, distance: 15, speed: 0.035 },
+    { name: 'Earth',   color: 0x3399ff, distance: 20, speed: 0.03 },
+    { name: 'Mars',    color: 0xff3300, distance: 25, speed: 0.025 },
+    { name: 'Jupiter', color: 0xff9966, distance: 32, speed: 0.02 },
+    { name: 'Saturn',  color: 0xffcc66, distance: 40, speed: 0.015 },
+    { name: 'Uranus',  color: 0x66ffff, distance: 47, speed: 0.01 },
+    { name: 'Neptune', color: 0x6666ff, distance: 54, speed: 0.007 }
+  ];
+
+  const speeds = {};
+  const angles = {};
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+  camera.position.z = 120;
+
+  const renderer = new THREE.WebGLRenderer();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  const light = new THREE.PointLight(0xffffff, 2, 500);
+  light.position.set(0, 0, 0);
+  scene.add(light);
+
+  // Sun
+  const sunGeo = new THREE.SphereGeometry(4, 32, 32);
+  const sunMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+  const sun = new THREE.Mesh(sunGeo, sunMat);
+  scene.add(sun);
+
+  // Planet Creation
+  const planetMeshes = {};
+  planetsData.forEach(planet => {
+    const geo = new THREE.SphereGeometry(1.5, 16, 16);
+    const mat = new THREE.MeshStandardMaterial({ color: planet.color });
+    const mesh = new THREE.Mesh(geo, mat);
+    scene.add(mesh);
+    mesh.position.x = planet.distance;
+
+    planetMeshes[planet.name] = mesh;
+    angles[planet.name] = 0;
+    speeds[planet.name] = planet.speed;
+
+    // UI slider
+    const container = document.getElementById('sliders');
+    const label = document.createElement('label');
+    label.innerText = `${planet.name} Speed: `;
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = 0;
+    slider.max = 0.1;
+    slider.step = 0.001;
+    slider.value = planet.speed;
+    slider.className = 'slider';
+    slider.oninput = () => speeds[planet.name] = parseFloat(slider.value);
+    container.appendChild(label);
+    container.appendChild(slider);
+    container.appendChild(document.createElement('br'));
+  });
+
+function animate() {
+    requestAnimationFrame(animate);
+    planetsData.forEach(p => {
+      angles[p.name] += speeds[p.name];
+      const planet = planetMeshes[p.name];
+      planet.position.x = Math.cos(angles[p.name]) * p.distance;
+      planet.position.z = Math.sin(angles[p.name]) * p.distance;
+    });
+    renderer.render(scene, camera);
+  }
+animate();
+ // Resize
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+</body>
+</html>
